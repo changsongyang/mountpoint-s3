@@ -241,7 +241,7 @@ fn compile_crt(output_dir: &Path) -> PathBuf {
 
         fs::create_dir_all(&lib_build_dir).expect("failed to create lib build directory");
 
-        let mut builder = cmake::Config::new(lib_source_dir);
+        let mut builder = cmake::Config::new(&lib_source_dir);
         builder
             .out_dir(lib_build_dir)
             .build_target("install")
@@ -250,7 +250,14 @@ fn compile_crt(output_dir: &Path) -> PathBuf {
             .define("BUILD_TESTING", "OFF");
 
         if lib.package_name == "aws-lc" {
-            builder.define("FORTIFY_SOURCE", "0");
+            // Patch jitterentropy CMakeLists.txt to replace -U_FORTIFY_SOURCE with -D_FORTIFY_SOURCE=0
+            let jitter_cmake = lib_source_dir.join("third_party/jitterentropy/CMakeLists.txt");
+            if jitter_cmake.exists() {
+                let content = std::fs::read_to_string(&jitter_cmake).expect("failed to read jitterentropy CMakeLists.txt");
+                let patched = content.replace("-Wp,-U_FORTIFY_SOURCE", "-D_FORTIFY_SOURCE=0");
+                std::fs::write(&jitter_cmake, patched).expect("failed to write patched jitterentropy CMakeLists.txt");
+            }
+
             builder.define("DISABLE_PERL", "ON");
             builder.define("DISABLE_GO", "ON");
             builder.define("BUILD_TOOL", "OFF");
