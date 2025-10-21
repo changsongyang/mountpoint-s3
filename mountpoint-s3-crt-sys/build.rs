@@ -250,6 +250,7 @@ fn compile_crt(output_dir: &Path) -> PathBuf {
             .define("BUILD_TESTING", "OFF");
 
         if lib.package_name == "aws-lc" {
+            builder.define("FORTIFY_SOURCE", "0");
             builder.define("DISABLE_PERL", "ON");
             builder.define("DISABLE_GO", "ON");
             builder.define("BUILD_TOOL", "OFF");
